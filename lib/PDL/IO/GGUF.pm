@@ -9,7 +9,7 @@ use PDL::Core ();
 use PDL::Lite ();
 use PDL::Types ();
 
-our $VERSION   = '0.01';
+our $VERSION   = '0.011';
 our @EXPORT_OK = qw(rgguf wgguf gguf_header);
 
 # GGUF v3 constants
@@ -260,6 +260,13 @@ PDL::IO::GGUF - Read and write GGUF v3 model weight files as PDL ndarrays
 
 C<PDL::IO::GGUF> provides pure-Perl reading and writing of GGUF v3 binary files
 (used by C<llama.cpp> and C<ggml>) directly to and from L<PDL> ndarrays.
+
+=head1 TYPES
+
+Supports real numeric tensor types defined by the GGUF v3 specification
+(C<float>, C<double>, C<sbyte>, C<short>, C<long>, C<longlong>, C<byte>,
+C<ushort>, C<ulong>, C<ulonglong>). Complex PDL types (C<cfloat>, C<cdouble>)
+are not supported because GGUF stores real-valued model weights.
 
 =head1 AUTHOR
 

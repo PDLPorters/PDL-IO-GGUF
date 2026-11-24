@@ -26,11 +26,11 @@ WriteMakefile(
         resources   => {
             repository => {
                 type => 'git',
-                url  => 'https://github.com/GoogleCloudPlatform/google-auth-library-perl.git',
-                web  => 'https://github.com/GoogleCloudPlatform/google-auth-library-perl',
+                url  => 'https://github.com/PDLPorters/PDL-IO-GGUF.git',
+                web  => 'https://github.com/PDLPorters/PDL-IO-GGUF',
             },
             bugtracker => {
-                web => 'https://github.com/GoogleCloudPlatform/google-auth-library-perl/issues',
+                web => 'https://github.com/PDLPorters/PDL-IO-GGUF/issues',
             },
         },
     },
