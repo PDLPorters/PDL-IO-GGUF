@@ -9,7 +9,7 @@ use PDL::Core ();
 use PDL::Lite ();
 use PDL::Types ();
 
-our $VERSION   = '0.01';
+our $VERSION   = '0.011';
 our @EXPORT_OK = qw(rgguf wgguf gguf_header);
 
 # GGUF v3 constants
@@ -261,12 +261,83 @@ PDL::IO::GGUF - Read and write GGUF v3 model weight files as PDL ndarrays
 C<PDL::IO::GGUF> provides pure-Perl reading and writing of GGUF v3 binary files
 (used by C<llama.cpp> and C<ggml>) directly to and from L<PDL> ndarrays.
 
+=head1 TUTORIAL
+
+This tutorial demonstrates the GGUF v3 model weight and metadata workflow
+(analogous to C<gguf-py> / C<llama.cpp> inspection tools) in idiomatic Perl
+and L<PDL>.
+
+=head2 1. Write Tensors and Model Metadata to a GGUF File
+
+Pass the output filename, a hashref of named L<PDL> ndarrays, and an optional
+metadata hashref to C<wgguf>:
+
+    use strict;
+    use warnings;
+    use File::Temp qw(tempfile);
+    use PDL;
+    use PDL::IO::GGUF qw(rgguf wgguf gguf_header);
+
+    my (undef, $path) = tempfile(SUFFIX => '.gguf', UNLINK => 1);
+
+    my $tensors = {
+        'blk.0.attn_q.weight' => float([[0.1, -0.2, 0.3], [0.4, 0.5, -0.6]]),
+        'blk.0.attn_norm.bias' => float([0.01, 0.02, 0.03]),
+    };
+    my $meta = {
+        'general.architecture' => 'llama',
+        'general.name'         => 'tiny-demo',
+        'llama.block_count'    => 1,
+    };
+
+    wgguf($path, $tensors, $meta);
+
+=head2 2. Inspect Header Metadata Without Loading Payloads
+
+Use C<gguf_header> to inspect the GGUF version, key-value metadata, and tensor
+directory (names, dimensions, GGML types, and byte offsets) without reading
+tensor data into memory:
+
+    my $hdr = gguf_header($path);
+    print 'GGUF version: ', $hdr->{version}, "\n";
+    print 'Architecture: ', $hdr->{metadata}{'general.architecture'}, "\n";
+
+    for my $t (@{ $hdr->{tensors} }) {
+        printf "Tensor %-24s dims=[%s] offset=%d\n",
+            $t->{name}, join('x', @{ $t->{dims} }), $t->{offset};
+    }
+
+=head2 3. Load Tensors and Run PDL Diagnostics
+
+Call C<rgguf> in list context to retrieve both the tensor hashref and metadata
+hashref (or in scalar context for just the tensor hashref):
+
+    my ($loaded, $loaded_meta) = rgguf($path);
+    my $w = $loaded->{'blk.0.attn_q.weight'};
+    printf "Loaded %s: shape=(%s), l2_norm=%.4f\n",
+        $loaded_meta->{'general.name'},
+        join(',', $w->dims),
+        sqrt(($w * $w)->sum);
+
+See C<examples/quickstart.pl> in the distribution for a complete runnable
+script.
+
+=head1 TYPES
+
+Supports real numeric tensor types defined by the GGUF v3 specification
+(C<float>, C<double>, C<sbyte>, C<short>, C<long>, C<longlong>, C<byte>,
+C<ushort>, C<ulong>, C<ulonglong>). Complex PDL types (C<cfloat>, C<cdouble>)
+are not supported because GGUF stores real-valued model weights.
+
 =head1 AUTHOR
 
 C.J. Collier E<lt>cjac@google.comE<gt>
 
-=head1 LICENSE AND COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
-Copyright 2026 Google LLC. Apache License, Version 2.0.
+Copyright 2026 Google LLC
+
+This library is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut
